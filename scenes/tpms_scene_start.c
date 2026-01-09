@@ -3,6 +3,7 @@
 typedef enum {
     SubmenuIndexActivateThenScan,
     SubmenuIndexScanOnly,
+    SubmenuIndexSweep,
     SubmenuIndexTPMSRelearn,
     SubmenuIndexTPMSAbout,
 } SubmenuIndex;
@@ -25,6 +26,8 @@ void tpms_scene_start_on_enter(void* context) {
         app);
     submenu_add_item(
         submenu, "Scan Only", SubmenuIndexScanOnly, tpms_scene_start_submenu_callback, app);
+    submenu_add_item(
+        submenu, "Sweep (Discovery)", SubmenuIndexSweep, tpms_scene_start_submenu_callback, app);
     submenu_add_item(
         submenu, "Relearn Config", SubmenuIndexTPMSRelearn, tpms_scene_start_submenu_callback, app);
     submenu_add_item(
@@ -56,6 +59,10 @@ bool tpms_scene_start_on_event(void* context, SceneManagerEvent event) {
         } else if(event.event == SubmenuIndexScanOnly) {
             app->scan_mode = TPMSScanModeScanOnly;
             scene_manager_next_scene(app->scene_manager, TPMSSceneSelectSensor);
+            consumed = true;
+        } else if(event.event == SubmenuIndexSweep) {
+            // Go to sweep configuration
+            scene_manager_next_scene(app->scene_manager, TPMSSceneSweepConfig);
             consumed = true;
         } else if(event.event == SubmenuIndexTPMSRelearn) {
             scene_manager_next_scene(app->scene_manager, TPMSSceneRelearn);

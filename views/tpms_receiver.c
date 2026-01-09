@@ -10,9 +10,9 @@
 #define TAG "TPMSReceiver"
 
 #define FRAME_HEIGHT 12
-#define MAX_LEN_PX 112
-#define MENU_ITEMS 4u
-#define UNLOCK_CNT 3
+#define MAX_LEN_PX   112
+#define MENU_ITEMS   4u
+#define UNLOCK_CNT   3
 
 #define SUBGHZ_RAW_THRESHOLD_MIN -90.0f
 typedef struct {
@@ -68,6 +68,8 @@ typedef struct {
     uint8_t u_rssi;
     bool external_radio;
     TPMSScanMode scan_mode;
+    uint8_t sweep_cycle;
+    uint8_t sweep_countdown;
 } TPMSReceiverModel;
 
 void tpms_view_receiver_set_rssi(TPMSReceiver* instance, float rssi) {
@@ -108,9 +110,21 @@ void tpms_view_receiver_set_lock(TPMSReceiver* tpms_receiver, TPMSLock lock) {
 void tpms_view_receiver_set_scan_mode(TPMSReceiver* tpms_receiver, TPMSScanMode scan_mode) {
     furi_assert(tpms_receiver);
     with_view_model(
+        tpms_receiver->view, TPMSReceiverModel * model, { model->scan_mode = scan_mode; }, true);
+}
+
+void tpms_view_receiver_set_sweep_cycle(TPMSReceiver* tpms_receiver, uint8_t cycle) {
+    furi_assert(tpms_receiver);
+    with_view_model(
+        tpms_receiver->view, TPMSReceiverModel * model, { model->sweep_cycle = cycle; }, true);
+}
+
+void tpms_view_receiver_set_sweep_countdown(TPMSReceiver* tpms_receiver, uint8_t seconds) {
+    furi_assert(tpms_receiver);
+    with_view_model(
         tpms_receiver->view,
         TPMSReceiverModel * model,
-        { model->scan_mode = scan_mode; },
+        { model->sweep_countdown = seconds; },
         true);
 }
 
@@ -251,12 +265,22 @@ void tpms_view_receiver_draw(Canvas* canvas, TPMSReceiverModel* model) {
         canvas_draw_icon(
             canvas, 0, 0, model->external_radio ? &I_Fishing_123x52 : &I_Scanning_123x52);
         canvas_set_font(canvas, FontPrimary);
-        canvas_draw_str(canvas, 63, 46, "Scanning...");
+        if(model->scan_mode == TPMSScanModeSweep) {
+            char sweep_text[20];
+            snprintf(sweep_text, sizeof(sweep_text), "Sweeping... %d", model->sweep_cycle + 1);
+            canvas_draw_str(canvas, 63, 46, sweep_text);
+        } else {
+            canvas_draw_str(canvas, 63, 46, "Scanning...");
+        }
         canvas_set_font(canvas, FontSecondary);
         canvas_draw_str(canvas, 44, 10, model->external_radio ? "Ext" : "Int");
         // Show appropriate hint based on scan mode
         if(model->scan_mode == TPMSScanModeActivateThenScan) {
             canvas_draw_str(canvas, 70, 9, "-> to activate");
+        } else if(model->scan_mode == TPMSScanModeSweep) {
+            char countdown_text[16];
+            snprintf(countdown_text, sizeof(countdown_text), "Next: %ds", model->sweep_countdown);
+            canvas_draw_str(canvas, 70, 9, countdown_text);
         }
         // In Scan Only mode, don't show right arrow hint
     }
@@ -487,6 +511,8 @@ TPMSReceiver* tpms_view_receiver_alloc() {
             model->history = malloc(sizeof(TPMSReceiverHistory));
             model->external_radio = false;
             model->scan_mode = TPMSScanModeScanOnly;
+            model->sweep_cycle = 0;
+            model->sweep_countdown = 0;
             TPMSReceiverMenuItemArray_init(model->history->data);
         },
         true);
@@ -530,8 +556,7 @@ View* tpms_view_receiver_get_view(TPMSReceiver* tpms_receiver) {
 uint16_t tpms_view_receiver_get_idx_menu(TPMSReceiver* tpms_receiver) {
     furi_assert(tpms_receiver);
     uint32_t idx = 0;
-    with_view_model(
-        tpms_receiver->view, TPMSReceiverModel * model, { idx = model->idx; }, false);
+    with_view_model(tpms_receiver->view, TPMSReceiverModel * model, { idx = model->idx; }, false);
     return idx;
 }
 
@@ -546,4 +571,9 @@ void tpms_view_receiver_set_idx_menu(TPMSReceiver* tpms_receiver, uint16_t idx) 
         },
         true);
     tpms_view_receiver_update_offset(tpms_receiver);
+}
+
+void tpms_view_receiver_trigger_activation(TPMSReceiver* tpms_receiver) {
+    furi_assert(tpms_receiver);
+    tpms_relearn_start(tpms_receiver);
 }

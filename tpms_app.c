@@ -116,7 +116,13 @@ TPMSApp* tpms_app_alloc() {
     app->scan_mode = TPMSScanModeScanOnly;
     app->protocol_filter = TPMSProtocolFilterAll;
 
-    scene_manager_next_scene(app->scene_manager, TPMSSceneStart);
+    // Initialize sweep config defaults
+    app->sweep_start_frequency = 0; // 433.92 MHz
+    app->sweep_start_preset = 0; // AM650
+    app->sweep_max_cycles = 3;
+    app->sweep_seconds_per_combo = 4;
+
+    scene_manager_next_scene(app->scene_manager, TPMSSceneSplash);
 
     return app;
 }
