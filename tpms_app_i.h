@@ -57,6 +57,8 @@ struct TPMSApp {
     SubGhzSetting* setting;
     TPMSRelearn relearn;
     TPMSRelearnType relearn_type;
+    TPMSScanMode scan_mode;
+    TPMSProtocolFilter protocol_filter;
 };
 
 void tpms_preset_init(

@@ -112,7 +112,11 @@ TPMSApp* tpms_app_alloc() {
 
     furi_hal_power_suppress_charge_enter();
 
-    scene_manager_next_scene(app->scene_manager, TPMSSceneReceiver);
+    // Initialize scan mode defaults
+    app->scan_mode = TPMSScanModeScanOnly;
+    app->protocol_filter = TPMSProtocolFilterAll;
+
+    scene_manager_next_scene(app->scene_manager, TPMSSceneStart);
 
     return app;
 }

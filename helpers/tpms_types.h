@@ -56,3 +56,15 @@ typedef enum {
     TPMSRelearnTypeCommon,
     //TPMSRelearnAnotherOEM,
 } TPMSRelearnType;
+
+typedef enum {
+    TPMSScanModeActivateThenScan,
+    TPMSScanModeScanOnly,
+} TPMSScanMode;
+
+typedef enum {
+    TPMSProtocolFilterAll,
+    TPMSProtocolFilterSchraderGG4,
+    TPMSProtocolFilterSchraderSMD3MA4,
+    TPMSProtocolFilterNum,
+} TPMSProtocolFilter;

@@ -1,5 +1,26 @@
 #include "../tpms_app_i.h"
 #include "../views/tpms_receiver.h"
+#include "../protocols/schrader_gg4.h"
+#include "../protocols/schrader_smd3ma4.h"
+#include <string.h>
+
+// Check if the decoded protocol matches the current filter
+static bool tpms_protocol_filter_match(TPMSApp* app, SubGhzProtocolDecoderBase* decoder_base) {
+    if(app->protocol_filter == TPMSProtocolFilterAll) {
+        return true;
+    }
+
+    const char* protocol_name = decoder_base->protocol->name;
+
+    switch(app->protocol_filter) {
+    case TPMSProtocolFilterSchraderGG4:
+        return strcmp(protocol_name, TPMS_PROTOCOL_SCHRADER_GG4_NAME) == 0;
+    case TPMSProtocolFilterSchraderSMD3MA4:
+        return strcmp(protocol_name, TPMS_PROTOCOL_SCHRADER_SMD3MA4_NAME) == 0;
+    default:
+        return true;
+    }
+}
 
 static const NotificationSequence subghz_sequence_rx = {
     &message_green_255,
@@ -76,6 +97,13 @@ static void tpms_scene_receiver_add_to_history_callback(
     void* context) {
     furi_assert(context);
     TPMSApp* app = context;
+
+    // Check if the protocol matches the current filter
+    if(!tpms_protocol_filter_match(app, decoder_base)) {
+        subghz_receiver_reset(receiver);
+        return;
+    }
+
     FuriString* str_buff;
     str_buff = furi_string_alloc();
 
