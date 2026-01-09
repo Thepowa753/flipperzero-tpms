@@ -42,6 +42,7 @@ typedef enum {
     TPMSReceiverBarShowLock,
     TPMSReceiverBarShowToUnlockPress,
     TPMSReceiverBarShowUnlock,
+    TPMSReceiverBarShowActivating,
 } TPMSReceiverBarShow;
 
 struct TPMSReceiver {
@@ -66,6 +67,7 @@ typedef struct {
     TPMSReceiverBarShow bar_show;
     uint8_t u_rssi;
     bool external_radio;
+    TPMSScanMode scan_mode;
 } TPMSReceiverModel;
 
 void tpms_view_receiver_set_rssi(TPMSReceiver* instance, float rssi) {
@@ -101,6 +103,15 @@ void tpms_view_receiver_set_lock(TPMSReceiver* tpms_receiver, TPMSLock lock) {
             { model->bar_show = TPMSReceiverBarShowDefault; },
             true);
     }
+}
+
+void tpms_view_receiver_set_scan_mode(TPMSReceiver* tpms_receiver, TPMSScanMode scan_mode) {
+    furi_assert(tpms_receiver);
+    with_view_model(
+        tpms_receiver->view,
+        TPMSReceiverModel * model,
+        { model->scan_mode = scan_mode; },
+        true);
 }
 
 void tpms_view_receiver_set_callback(
@@ -243,7 +254,11 @@ void tpms_view_receiver_draw(Canvas* canvas, TPMSReceiverModel* model) {
         canvas_draw_str(canvas, 63, 46, "Scanning...");
         canvas_set_font(canvas, FontSecondary);
         canvas_draw_str(canvas, 44, 10, model->external_radio ? "Ext" : "Int");
-        canvas_draw_str(canvas, 70, 9, "-> to relearn");
+        // Show appropriate hint based on scan mode
+        if(model->scan_mode == TPMSScanModeActivateThenScan) {
+            canvas_draw_str(canvas, 70, 9, "-> to activate");
+        }
+        // In Scan Only mode, don't show right arrow hint
     }
 
     // Draw RSSI
@@ -270,6 +285,9 @@ void tpms_view_receiver_draw(Canvas* canvas, TPMSReceiverModel* model) {
     case TPMSReceiverBarShowUnlock:
         canvas_draw_icon(canvas, 64, 55, &I_Unlock_7x8);
         canvas_draw_str(canvas, 74, 62, "Unlocked");
+        break;
+    case TPMSReceiverBarShowActivating:
+        canvas_draw_str(canvas, 44, 62, "125kHz Activating...");
         break;
     default:
         canvas_draw_str(canvas, 44, 62, furi_string_get_cstr(model->frequency_str));
@@ -303,6 +321,12 @@ static void tpms_relearn_stop(void* context) {
         tpms_receiver->relearn_active = false;
         furi_timer_stop(tpms_receiver->relearn_timer);
         furi_hal_rfid_tim_read_stop();
+        // Hide activating indicator
+        with_view_model(
+            tpms_receiver->view,
+            TPMSReceiverModel * model,
+            { model->bar_show = TPMSReceiverBarShowDefault; },
+            true);
     }
 }
 
@@ -311,6 +335,12 @@ static void tpms_relearn_start(void* context) {
     TPMSReceiver* tpms_receiver = context;
     if(tpms_receiver->relearn_active) tpms_relearn_stop(context);
     tpms_receiver->relearn_active = true;
+    // Show activating indicator
+    with_view_model(
+        tpms_receiver->view,
+        TPMSReceiverModel * model,
+        { model->bar_show = TPMSReceiverBarShowActivating; },
+        true);
     furi_hal_rfid_tim_read_start(125000, 0.5);
     furi_timer_start(tpms_receiver->relearn_timer, furi_ms_to_ticks(3000));
 }
@@ -375,7 +405,16 @@ bool tpms_view_receiver_input(InputEvent* event, void* context) {
     } else if(event->key == InputKeyLeft && event->type == InputTypeShort) {
         tpms_receiver->callback(TPMSCustomEventViewReceiverConfig, tpms_receiver->context);
     } else if(event->key == InputKeyRight && event->type == InputTypeShort) {
-        tpms_relearn_start(tpms_receiver);
+        // Only trigger 125kHz activation in Activate+Scan mode
+        bool should_activate = false;
+        with_view_model(
+            tpms_receiver->view,
+            TPMSReceiverModel * model,
+            { should_activate = (model->scan_mode == TPMSScanModeActivateThenScan); },
+            false);
+        if(should_activate) {
+            tpms_relearn_start(tpms_receiver);
+        }
     } else if(event->key == InputKeyOk && event->type == InputTypeShort) {
         with_view_model(
             tpms_receiver->view,
@@ -447,6 +486,7 @@ TPMSReceiver* tpms_view_receiver_alloc() {
             model->bar_show = TPMSReceiverBarShowDefault;
             model->history = malloc(sizeof(TPMSReceiverHistory));
             model->external_radio = false;
+            model->scan_mode = TPMSScanModeScanOnly;
             TPMSReceiverMenuItemArray_init(model->history->data);
         },
         true);
