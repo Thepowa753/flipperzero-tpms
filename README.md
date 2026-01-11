@@ -12,7 +12,10 @@
 |----------|-----------|------------|----------|
 | Schrader GG4 | 433.92 MHz, 315 MHz | AM | KIA Sportage, Mercedes-Benz, and others |
 | Schrader SMD3MA4 | 433.92 MHz, 315 MHz | AM | Subaru (Ascent, Crosstrek, Forester, Impreza, Legacy, Outback, WRX), Nissan 370Z, Infiniti FX/EX/G, Renault Koleos |
+| Schrader EG53MA4 | 433.92 MHz, 315 MHz | AM | Chevrolet (Bolt EV/EUV, Volt, Silverado), Saab, Opel, Vauxhall |
 | Abarth 124 (VDO TG1C) | 433.92 MHz | FM | Abarth 124 Spider, Fiat 124 Spider, Mazda MX-5 ND |
+
+**Note:** US vehicles typically use 315 MHz, while European vehicles use 433.92 MHz.
 
 ## Scan Modes
 

@@ -2,6 +2,7 @@
 #include "../views/tpms_receiver.h"
 #include "../protocols/schrader_gg4.h"
 #include "../protocols/schrader_smd3ma4.h"
+#include "../protocols/schrader_eg53ma4.h"
 #include "../protocols/abarth_124.h"
 #include <string.h>
 
@@ -39,6 +40,8 @@ static bool tpms_protocol_filter_match(TPMSApp* app, SubGhzProtocolDecoderBase* 
         return strcmp(protocol_name, TPMS_PROTOCOL_SCHRADER_GG4_NAME) == 0;
     case TPMSProtocolFilterSchraderSMD3MA4:
         return strcmp(protocol_name, TPMS_PROTOCOL_SCHRADER_SMD3MA4_NAME) == 0;
+    case TPMSProtocolFilterSchraderEG53MA4:
+        return strcmp(protocol_name, TPMS_PROTOCOL_SCHRADER_EG53MA4_NAME) == 0;
     case TPMSProtocolFilterAbarth124:
         return strcmp(protocol_name, TPMS_PROTOCOL_ABARTH_124_NAME) == 0;
     default:
