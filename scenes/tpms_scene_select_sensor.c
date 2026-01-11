@@ -4,6 +4,8 @@ typedef enum {
     SubmenuIndexAllProtocols,
     SubmenuIndexSchraderGG4,
     SubmenuIndexSchraderSMD3MA4,
+    SubmenuIndexSchraderEG53MA4,
+    SubmenuIndexAbarth124,
 } SubmenuIndex;
 
 void tpms_scene_select_sensor_submenu_callback(void* context, uint32_t index) {
@@ -29,8 +31,20 @@ void tpms_scene_select_sensor_on_enter(void* context) {
         app);
     submenu_add_item(
         submenu,
-        "Schrader SMD3MA4",
+        "Schrader SMD3MA4 (Subaru)",
         SubmenuIndexSchraderSMD3MA4,
+        tpms_scene_select_sensor_submenu_callback,
+        app);
+    submenu_add_item(
+        submenu,
+        "Schrader EG53MA4 (GM/Chevy)",
+        SubmenuIndexSchraderEG53MA4,
+        tpms_scene_select_sensor_submenu_callback,
+        app);
+    submenu_add_item(
+        submenu,
+        "Abarth 124 / Fiat / MX-5",
+        SubmenuIndexAbarth124,
         tpms_scene_select_sensor_submenu_callback,
         app);
 
@@ -54,6 +68,12 @@ bool tpms_scene_select_sensor_on_event(void* context, SceneManagerEvent event) {
             break;
         case SubmenuIndexSchraderSMD3MA4:
             app->protocol_filter = TPMSProtocolFilterSchraderSMD3MA4;
+            break;
+        case SubmenuIndexSchraderEG53MA4:
+            app->protocol_filter = TPMSProtocolFilterSchraderEG53MA4;
+            break;
+        case SubmenuIndexAbarth124:
+            app->protocol_filter = TPMSProtocolFilterAbarth124;
             break;
         default:
             break;
