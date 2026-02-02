@@ -1,5 +1,6 @@
 #include "citroen.h"
 #include <lib/toolbox/manchester_decoder.h>
+#include <inttypes.h>
 
 #define TAG "Citroen"
 
@@ -277,13 +278,13 @@ void tpms_protocol_decoder_citroen_feed(void* context, bool level, uint32_t dura
             uint16_t preamble = instance->preamble_data & 0xFFFF;
 
             if(preamble == PREAMBLE_PATTERN || preamble == (uint16_t)~PREAMBLE_PATTERN) {
-                FURI_LOG_D(TAG, "Preamble matched: %04x", preamble);
+                FURI_LOG_D(TAG, "Preamble matched: %04" PRIx16, preamble);
                 instance->decoder.parser_step = CitroenDecoderStepDecoderData;
                 instance->decoder.decode_data = 0;
                 instance->decoder.decode_count_bit = 0;
                 instance->manchester_saved_state = ManchesterStateStart1;
             } else {
-                FURI_LOG_D(TAG, "Preamble mismatch: %04lx", (unsigned long)instance->preamble_data);
+                FURI_LOG_D(TAG, "Preamble mismatch: %04" PRIx32, instance->preamble_data);
                 instance->decoder.parser_step = CitroenDecoderStepReset;
             }
         }
