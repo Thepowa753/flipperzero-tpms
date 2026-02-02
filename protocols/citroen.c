@@ -152,9 +152,9 @@ static bool tpms_protocol_citroen_check_checksum(TPMSProtocolDecoderCitroen* ins
     b[6] = (data >> 8) & 0xFF;
     b[7] = data & 0xFF;
 
-    // XOR checksum: b[0] ^ b[1] ^ b[2] ^ b[3] ^ b[4] ^ b[5] ^ b[6] should equal 0
-    // (Since b[6] should be the XOR of all previous bytes including the ones we're missing)
-    // We can do partial verification
+    // XOR checksum: The checksum byte (b[6]) should equal the XOR of all previous bytes
+    // including bytes from the full message we're missing (the first 2 ID bytes)
+    // Since we only have partial data (64 of 80 bits), we do a partial verification
     uint8_t checksum = 0;
     for(int i = 0; i < 7; i++) {
         checksum ^= b[i];
@@ -198,14 +198,10 @@ static void tpms_protocol_citroen_analyze(TPMSBlockGeneric* instance) {
     uint32_t id_partial = (data >> 48) & 0xFFFF;
     instance->id = id_partial;
 
-    // Extract flags and repeat counter (byte 5 = bits 47-40)
-    uint8_t flags_repeat = (data >> 40) & 0xFF;
-    // flags are upper nibble, repeat is lower nibble
-    // We'll store flags in battery_low temporarily
-    uint8_t flags = flags_repeat >> 4;
-    uint8_t repeat = flags_repeat & 0x0F;
-    UNUSED(flags);
-    UNUSED(repeat);
+    // Note: Flags and repeat counter are in byte 5 (bits 47-40) but are not currently
+    // used in the output. They could be used in future for enhanced protocol analysis:
+    // - flags (upper nibble): status flags from sensor
+    // - repeat (lower nibble): retransmission counter (0-3)
 
     // Extract pressure (byte 4 = bits 39-32)
     uint8_t pressure_raw = (data >> 32) & 0xFF;
@@ -275,10 +271,11 @@ void tpms_protocol_decoder_citroen_feed(void* context, bool level, uint32_t dura
 
         // Check if we have enough bits to verify preamble
         if(instance->header_count >= PREAMBLE_BITS_LEN) {
-            // Check for preamble pattern (may need to check inverted too)
+            // Check for preamble pattern
+            // We check both normal and inverted patterns because the signal may arrive
+            // inverted depending on the receiver's signal processing
             uint16_t preamble = instance->preamble_data & 0xFFFF;
 
-            // Check both normal and inverted preamble
             if(preamble == PREAMBLE_PATTERN || preamble == (uint16_t)~PREAMBLE_PATTERN) {
                 FURI_LOG_D(TAG, "Preamble matched: %04x", preamble);
                 instance->decoder.parser_step = CitroenDecoderStepDecoderData;
@@ -286,7 +283,7 @@ void tpms_protocol_decoder_citroen_feed(void* context, bool level, uint32_t dura
                 instance->decoder.decode_count_bit = 0;
                 instance->manchester_saved_state = ManchesterStateStart1;
             } else {
-                FURI_LOG_D(TAG, "Preamble mismatch: %04lx", instance->preamble_data);
+                FURI_LOG_D(TAG, "Preamble mismatch: %04lx", (unsigned long)instance->preamble_data);
                 instance->decoder.parser_step = CitroenDecoderStepReset;
             }
         }
