@@ -4,14 +4,14 @@
 
 #define TAG "Citroen"
 
-// https://github.com/merbanan/rtl_433/blob/master/src/devices/tpms_citroen.c
+// ported from: https://github.com/merbanan/rtl_433/blob/master/src/devices/tpms_citroen.c
 // Citroen FSK 10 byte Manchester encoded checksummed TPMS data
 // also Peugeot (208, 308, etc.) and likely Fiat, Mitsubishi, VDO-types.
 
 /**
  * Citroen/Peugeot TPMS
  *
- * Vehicles: Citroen, Peugeot 208 (2015), Peugeot 308, and likely Fiat, Mitsubishi, VDO-types
+ * Vehicles: Citroen, Peugeot 208 (2015), Peugeot 308, and likely some Fiat and other Stellantis vehicles.
  *
  * Frequency: 433.92MHz
  * Modulation: FSK PCM with Manchester encoding
